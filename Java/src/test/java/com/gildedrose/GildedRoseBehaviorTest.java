@@ -61,9 +61,10 @@ class GildedRoseBehaviorTest {
 
     @Test
     void sulfuras_never_changes_sellIn_or_quality() {
+        Random rnd = new Random(123);
         Item sulf = new Item("Sulfuras, Hand of Ragnaros", 0, 80);
         GildedRose gr = app(sulf);
-        updateDays(gr, 5);
+        updateDays(gr, rnd.nextInt(30));
         assertEquals(0, sulf.sellIn);
         assertEquals(80, sulf.quality);
     }
@@ -103,8 +104,8 @@ class GildedRoseBehaviorTest {
         assertEquals(5, unknown.quality);
     }
 
-    @RepeatedTest(2)
-    void invariants_hold_across_random_items_over_many_days() {
+    @RepeatedTest(20)
+    void invariants_hold_across_random_items_over_many_days_with_performance_data() {
         Random rnd = new Random(123);
         Item[] items = new Item[200000];
         String[] names = new String[]{
