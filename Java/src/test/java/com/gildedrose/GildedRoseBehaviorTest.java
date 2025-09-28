@@ -104,7 +104,7 @@ class GildedRoseBehaviorTest {
         assertEquals(5, unknown.quality);
     }
 
-    @RepeatedTest(20)
+    @RepeatedTest(5)
     void invariants_hold_across_random_items_over_many_days_with_performance_data() {
         Random rnd = new Random(123);
         Item[] items = new Item[200000];

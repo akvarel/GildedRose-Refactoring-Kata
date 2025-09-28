@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'checkstyle'
+    id 'com.github.spotbugs' version '6.0.18'
 }
 
 repositories {
@@ -14,11 +16,43 @@ dependencies {
 
 group = 'com.gildedrose'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '1.8'
+
+defaultTasks 'build'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 test {
     useJUnitPlatform()
 }
+
+checkstyle {
+    toolVersion = '10.12.4'
+    config = resources.text.fromFile("config/checkstyle/checkstyle.xml")
+    ignoreFailures = true
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.required = false
+        html.required = true
+    }
+}
+
+spotbugs {
+    toolVersion = '4.8.6'
+    ignoreFailures = true
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+    reports.create('html') { required = true }
+}
+
+// Ensure static analysis tasks run with check
+check.dependsOn 'checkstyleMain', 'checkstyleTest', 'spotbugsMain', 'spotbugsTest'
 
 tasks.register('texttest', JavaExec) {
     mainClass = "com.gildedrose.TexttestFixture"

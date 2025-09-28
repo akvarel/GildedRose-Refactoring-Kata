@@ -1,0 +1,4 @@
+com.gildedrose.spi.MaliciousProvider
+com.gildedrose.spi.LowPrecProvider
+com.gildedrose.spi.HighPrecProvider
+com.gildedrose.spi.TieWithBuiltInBrieProvider
