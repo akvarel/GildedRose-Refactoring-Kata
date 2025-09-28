@@ -1,6 +1,7 @@
 package com.gildedrose;
 
 import com.gildedrose.old.GildedRoseOld;
+import com.gildedrose.simple.GildedRoseSimple;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
@@ -107,27 +108,37 @@ class GildedRoseBehaviorTest {
 
     @RepeatedTest(2)
     void invariants_hold_across_random_items_over_many_days_with_performance_data() {
-        // We validate invariants across three variants of the engine:
-        // 1) sequential, 2) parallel stream, 3) virtual-threaded, 4) old code
-        String[] modes = new String[]{"sequential", "parallel", "threaded", "old"};
+        // We validate invariants across five variants of the engine and ensure they all run on EXACTLY the same dataset:
+        // 1) sequential, 2) parallel stream, 3) virtual-threaded, 4) old code, 5) simple implementation
+        String[] modes = new String[]{"sequential", "parallel", "threaded", "old", "simple"};
+
+        // Build the base dataset once
+        Random rnd = new Random(123);
+        Item[] base = new Item[200_000];
+        String[] names = new String[]{
+                "+5 Dexterity Vest",
+                "Aged Brie",
+                "Elixir of the Mongoose",
+                "Sulfuras, Hand of Ragnaros",
+                "Backstage passes to a TAFKAL80ETC concert",
+                "Conjured Mana Cake",
+                "foo", "bar", "baz"
+        };
+        for (int i = 0; i < base.length; i++) {
+            String name = names[rnd.nextInt(names.length)];
+            int sellIn = rnd.nextInt(40) - 10; // [-10, 29]
+            int quality = rnd.nextInt(51);     // [0, 50]
+            base[i] = new Item(name, sellIn, quality);
+        }
+
         for (String mode : modes) {
-            Random rnd = new Random(123); // same seed for fair comparison per mode
-            Item[] items = new Item[200_000];
-            String[] names = new String[]{
-                    "+5 Dexterity Vest",
-                    "Aged Brie",
-                    "Elixir of the Mongoose",
-                    "Sulfuras, Hand of Ragnaros",
-                    "Backstage passes to a TAFKAL80ETC concert",
-                    "Conjured Mana Cake",
-                    "foo", "bar", "baz"
-            };
-            for (int i = 0; i < items.length; i++) {
-                String name = names[rnd.nextInt(names.length)];
-                int sellIn = rnd.nextInt(40) - 10; // [-10, 29]
-                int quality = rnd.nextInt(51);     // [0, 50]
-                items[i] = new Item(name, sellIn, quality);
+            // Make a deep copy for this mode so each variant starts from identical data
+            Item[] items = new Item[base.length];
+            for (int i = 0; i < base.length; i++) {
+                Item b = base[i];
+                items[i] = new Item(b.name, b.sellIn, b.quality);
             }
+
             // snapshot initial state for Sulfuras to assert immutability precisely
             int[] initialSellIn = new int[items.length];
             int[] initialQuality = new int[items.length];
@@ -148,6 +159,9 @@ class GildedRoseBehaviorTest {
                     break;
                 case "old":
                     gr = new GildedRoseOld(items);
+                    break;
+                case "simple":
+                    gr = new GildedRoseSimple(items, new com.gildedrose.simple.ItemUpdaterFactory());
                     break;
                 default:
                     gr = app(items); // sequential
