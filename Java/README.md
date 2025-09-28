@@ -58,7 +58,7 @@ boolean observerEnabled = false;
 String correlationId = null;
 boolean virtualThreads = true; // requires Java 21+
 
-GildedRose app = new GildedRose(items, factory, parallel, observer, observerEnabled, correlationId, virtualThreads);
+GildedRoseInterface app = new GildedRose(items, factory, parallel, observer, observerEnabled, correlationId, virtualThreads);
 app.updateQuality();
 ```
 
@@ -71,13 +71,14 @@ You can supply an UpdateObserver implementation and enable it to receive before/
 
 ```java
 class LoggingObserver implements UpdateObserver {
-  @Override public void onItemUpdated(ItemSnapshot before, ItemSnapshot after, String updaterType, UpdateContext ctx) {
+  @Override 
+  public void onItemUpdated(ItemSnapshot before, ItemSnapshot after, String updaterType, UpdateContext ctx) {
     System.out.printf("[%s] %s: %s -> %s on thread %d%n",
         ctx.correlationId(), updaterType, before, after, ctx.threadId());
   }
 }
 
-GildedRose app = new GildedRose(items, factory, false, new LoggingObserver(), true, "batch-123", false);
+GildedRoseInterface app = new GildedRose(items, factory, false, new LoggingObserver(), true, "batch-123", false);
 ```
 
 Observer is disabled by default; use the constructor overloads to enable.
@@ -88,17 +89,47 @@ You can contribute custom item rules without modifying core code by providing an
 1) Implement the SPI:
 
 ```java
-public class MyProvider implements ItemRuleProvider {
-  @Override public boolean supports(String name) { return name.startsWith("My Special"); }
-  @Override public ItemUpdater updater() { return item -> { /* mutate item in place */ }; }
-  @Override public int precedence() { return 5; } // higher wins; built-ins are 0
+package com.example.gildedrose.providers;
+
+import com.gildedrose.Item;
+import com.gildedrose.ItemRuleProvider;
+import com.gildedrose.ItemUpdater;
+
+public final class ConjuredProvider implements ItemRuleProvider {
+    @Override
+    public boolean supports(String name) {
+        // Match all Conjured lines; adjust to your naming convention if needed
+        return name != null && name.startsWith("Conjured");
+    }
+
+    @Override
+    public ItemUpdater updater() {
+        // Stateless implementation of the Conjured rules
+        return new ItemUpdater() {
+            @Override 
+            public void update(Item item) {
+                // Same semantics as the current built-in ConjuredUpdater
+                item.quality = Math.max(0, item.quality - 2);
+                item.sellIn -= 1;
+                if (item.sellIn < 0) {
+                    item.quality = Math.max(0, item.quality - 2);
+                }
+            }
+        };
+    }
+
+    @Override
+    public int precedence() {
+        // Must be > 0 to override built-ins; pick a clear, documented value
+        return 10;
+    }
 }
 ```
 
 2) Register in META-INF/services:
 - Create file `META-INF/services/com.gildedrose.ItemRuleProvider` containing the fully qualified class name:
 ```
-com.example.MyProvider
+com.example.gildedrose.providers.ConjuredProvider
 ```
 
 3) Precedence and safety:
@@ -108,6 +139,7 @@ com.example.MyProvider
 ---
 
 ## Architecture Overview
+- GildedRoseInterface: allows to test different kinds of GildedRose implementations
 - GildedRose: orchestrates daily updates over an Item[] array.
 - ItemUpdaterFactory: selects an ItemUpdater for a given item via ItemClassifier and external SPI providers.
 - ItemClassifier: maps item.name to an ItemType using canonical name constants.
