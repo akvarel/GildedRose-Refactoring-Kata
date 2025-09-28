@@ -4,8 +4,8 @@ import java.util.*;
 import java.util.function.Function;
 
 class ItemUpdaterFactory {
-    private final Map<ItemType, ItemUpdater> byType = new HashMap<>();
-    private final ItemUpdater defaultUpdater = new DefaultUpdater();
+    private final Map<ItemType, InternalItemUpdater> byType = new HashMap<>();
+    private final InternalItemUpdater defaultUpdater = new DefaultUpdater();
     private final Function<Item, ItemType> classifier;
     private final List<ItemRuleProvider> providers;
 
@@ -25,14 +25,16 @@ class ItemUpdaterFactory {
     private List<ItemRuleProvider> loadProviders() {
         List<ItemRuleProvider> list = new ArrayList<>();
         ServiceLoader<ItemRuleProvider> sl = ServiceLoader.load(ItemRuleProvider.class);
-        for (ItemRuleProvider p : sl) list.add(p);
-        // sort once by precedence asc so that picking the last yields highest precedence; ties deterministic by class name
+
+        for (ItemRuleProvider p : sl)
+            list.add(p);
+        // sort once by precedence asc so that picking the last yields the highest precedence; ties deterministic by class name
         list.sort(ItemRuleProvider::compare);
         return Collections.unmodifiableList(list);
     }
 
     ItemUpdater forItem(Item item) {
-        // consult external providers first: pick highest-precedence that supports this name strictly greater than builtins' precedence (0)
+        // consult external providers first: pick the highest-precedence that supports this name strictly greater than builtins' precedence (0)
         ItemRuleProvider best = null;
         String name = item.name;
         for (ItemRuleProvider p : providers) {
@@ -56,10 +58,15 @@ class ItemUpdaterFactory {
     /**
      * Wraps an updater to enforce invariants and safety after external updates.
      */
-    static final class GuardedUpdater implements ItemUpdater {
+    static final class GuardedUpdater implements InternalItemUpdater {
         private final ItemUpdater delegate;
-        GuardedUpdater(ItemUpdater delegate) { this.delegate = delegate; }
-        @Override public void update(Item item) {
+
+        GuardedUpdater(ItemUpdater delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void update(Item item) {
             String originalName = item.name;
             int originalSellIn = item.sellIn;
             int originalQuality = item.quality;

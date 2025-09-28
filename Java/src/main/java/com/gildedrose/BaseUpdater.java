@@ -8,7 +8,7 @@ package com.gildedrose;
  * Convention:
  * - Updaters should call these helpers instead of mutating Item fields directly.
  */
-abstract class BaseUpdater implements ItemUpdater {
+abstract sealed class BaseUpdater implements InternalItemUpdater permits AgedBrieUpdater, BackstageUpdater, ConjuredUpdater, DefaultUpdater, SulfurasUpdater {
     protected void increaseQuality(Item item, int by) {
         item.quality = Quality.clamp(item.quality + by);
     }

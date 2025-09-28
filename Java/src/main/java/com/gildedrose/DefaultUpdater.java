@@ -7,7 +7,7 @@ package com.gildedrose;
  * - After sell date (sellIn < 0): degrade twice as fast (an additional -1)
  * Invariants: quality is clamped to [0,50]. Name never changes.
  */
-class DefaultUpdater extends BaseUpdater {
+final class DefaultUpdater extends BaseUpdater {
     @Override
     public void update(Item item) {
         decreaseQuality(item, 1);

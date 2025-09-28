@@ -9,7 +9,7 @@ package com.gildedrose;
  * - After concert (sellIn < 0): quality drops to 0
  * Invariants: quality is clamped to [0,50] via helpers; name never changes.
  */
-class BackstageUpdater extends BaseUpdater {
+final class BackstageUpdater extends BaseUpdater {
     @Override
     public void update(Item item) {
         // Before concert

@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
-class GildedRose {
+class GildedRose implements GildedRoseInterface {
     private final ItemUpdaterFactory factory;
     Item[] items;
 
